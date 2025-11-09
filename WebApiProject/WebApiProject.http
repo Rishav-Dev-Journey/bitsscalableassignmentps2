@@ -1,6 +1,62 @@
 @WebApiProject_HostAddress = http://localhost:5281
 
-GET {{WebApiProject_HostAddress}}/weatherforecast/
-Accept: application/json
+### POST /charge - Create a payment charge (first request)
+POST {{WebApiProject_HostAddress}}/charge
+Content-Type: application/json
+Idempotency-Key: unique-key-12345
 
-###
+{
+  "amount": 100.00,
+  "currency": "USD",
+  "description": "Test payment",
+  "customerId": "cust_123",
+  "paymentMethod": {
+    "type": "card",
+    "cardNumber": "4242424242424242",
+    "cardholderName": "John Doe",
+    "expiryMonth": 12,
+    "expiryYear": 2025,
+    "cvv": "123"
+  }
+}
+
+### POST /charge - Same request with same Idempotency-Key (should return cached response)
+POST {{WebApiProject_HostAddress}}/charge
+Content-Type: application/json
+Idempotency-Key: unique-key-12345
+
+{
+  "amount": 100.00,
+  "currency": "USD",
+  "description": "Test payment",
+  "customerId": "cust_123",
+  "paymentMethod": {
+    "type": "card",
+    "cardNumber": "4242424242424242",
+    "cardholderName": "John Doe",
+    "expiryMonth": 12,
+    "expiryYear": 2025,
+    "cvv": "123"
+  }
+}
+
+### POST /charge - Without Idempotency-Key (should fail)
+POST {{WebApiProject_HostAddress}}/charge
+Content-Type: application/json
+
+{
+  "amount": 50.00,
+  "currency": "USD",
+  "description": "Another payment"
+}
+
+### POST /charge - Invalid amount (should fail)
+POST {{WebApiProject_HostAddress}}/charge
+Content-Type: application/json
+Idempotency-Key: unique-key-67890
+
+{
+  "amount": -10.00,
+  "currency": "USD",
+  "description": "Invalid payment"
+}

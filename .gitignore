@@ -88,3 +88,8 @@ artifacts/
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
