@@ -7,6 +7,7 @@ public class ChargeRequest
   public string? Description { get; set; }
   public string? CustomerId { get; set; }
   public PaymentMethodDetails? PaymentMethod { get; set; }
+  public bool? Capture { get; set; } = true; // If false, payment will be in "pending" status
 }
 
 public class PaymentMethodDetails

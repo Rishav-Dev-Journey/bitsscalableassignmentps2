@@ -1,15 +1,18 @@
 @WebApiProject_HostAddress = http://localhost:5281
+@base_url = {{WebApiProject_HostAddress}}/v1/payments
+@payment_id = ch_test123
 
-### POST /charge - Create a payment charge (first request)
-POST {{WebApiProject_HostAddress}}/charge
+### POST /v1/payments/charge - Create a payment charge (auto-capture)
+POST {{base_url}}/charge
 Content-Type: application/json
 Idempotency-Key: unique-key-12345
 
 {
   "amount": 100.00,
   "currency": "USD",
-  "description": "Test payment",
+  "description": "Test payment - auto capture",
   "customerId": "cust_123",
+  "capture": true,
   "paymentMethod": {
     "type": "card",
     "cardNumber": "4242424242424242",
@@ -19,6 +22,55 @@ Idempotency-Key: unique-key-12345
     "cvv": "123"
   }
 }
+
+### POST /v1/payments/charge - Create a pending payment (manual capture)
+POST {{base_url}}/charge
+Content-Type: application/json
+Idempotency-Key: unique-key-pending-001
+
+{
+  "amount": 250.00,
+  "currency": "USD",
+  "description": "Test payment - pending for capture",
+  "customerId": "cust_456",
+  "capture": false,
+  "paymentMethod": {
+    "type": "card",
+    "cardNumber": "4242424242424242",
+    "cardholderName": "Jane Smith",
+    "expiryMonth": 10,
+    "expiryYear": 2026,
+    "cvv": "456"
+  }
+}
+
+### GET /v1/payments/{payment_id} - Get payment details (replace with actual payment_id from POST response)
+GET {{base_url}}/ch_a1b2c3d4e5f6g7h8i9j0k1l2
+Accept: application/json
+
+### GET /v1/payments/{payment_id} - Get payment with variable
+GET {{base_url}}/{{payment_id}}
+Accept: application/json
+
+### PATCH /v1/payments/{payment_id}/capture - Capture a pending payment
+PATCH {{base_url}}/ch_a1b2c3d4e5f6g7h8i9j0k1l2/capture
+Content-Type: application/json
+
+### PATCH /v1/payments/{payment_id}/capture - Capture with variable
+PATCH {{base_url}}/{{payment_id}}/capture
+Content-Type: application/json
+
+### PATCH /v1/payments/{payment_id}/cancel - Cancel a payment
+PATCH {{base_url}}/ch_a1b2c3d4e5f6g7h8i9j0k1l2/cancel
+Content-Type: application/json
+
+### PATCH /v1/payments/{payment_id}/cancel - Cancel with variable
+PATCH {{base_url}}/{{payment_id}}/cancel
+Content-Type: application/json
+
+### GET /v1/payments/{payment_id} - Payment not found example
+GET {{base_url}}/ch_invalid_id
+Accept: application/json
 
 ### POST /charge - Same request with same Idempotency-Key (should return cached response)
 POST {{WebApiProject_HostAddress}}/charge
