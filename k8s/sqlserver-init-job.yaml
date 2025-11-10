@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mssql-init-job
+  namespace: default
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: mssql-init
+        image: mcr.microsoft.com/mssql-tools
+        command:
+        - /bin/bash
+        - -c
+        - |
+          # Wait for SQL Server to be ready
+          until /opt/mssql-tools/bin/sqlcmd -S mssql-service -U sa -P "$SA_PASSWORD" -Q "SELECT 1" > /dev/null 2>&1; do
+            echo "Waiting for SQL Server..."
+            sleep 5
+          done
+          
+          # Create database if it doesn't exist
+          /opt/mssql-tools/bin/sqlcmd -S mssql-service -U sa -P "$SA_PASSWORD" -Q "
+          IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'PaymentDB')
+          BEGIN
+            CREATE DATABASE PaymentDB;
+            PRINT 'Database PaymentDB created successfully';
+          END
+          ELSE
+          BEGIN
+            PRINT 'Database PaymentDB already exists';
+          END
+          "
+          
+          echo "Database initialization completed"
+        env:
+        - name: SA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mssql-secret
+              key: SA_PASSWORD

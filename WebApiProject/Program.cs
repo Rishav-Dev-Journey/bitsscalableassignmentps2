@@ -37,12 +37,17 @@ builder.Services.AddScoped<PaymentService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Configure the HTTP request pipeline - Enable Swagger in all environments
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Payment API v1");
+});
+
+// Add health check endpoint
+app.MapGet("/", () => Results.Ok(new { status = "healthy", service = "Payment API", version = "1.0" }))
+   .WithName("HealthCheck")
+   .Produces<object>(200);
 
 app.UseHttpsRedirection();
 

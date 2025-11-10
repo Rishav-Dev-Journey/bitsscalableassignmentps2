@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: create-tables-script
+  namespace: default
+data:
+  create-tables.sql: |
+    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Charges')
+    BEGIN
+      CREATE TABLE Charges (
+        Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        Status NVARCHAR(50) NOT NULL,
+        Amount BIGINT NOT NULL,
+        Currency NVARCHAR(10) NOT NULL,
+        Description NVARCHAR(MAX),
+        CustomerId NVARCHAR(100) NOT NULL,
+        CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        PaymentMethodType NVARCHAR(50) NOT NULL,
+        CardLast4 NVARCHAR(4)
+      );
+      PRINT 'Table Charges created';
+    END;
+    
+    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'IdempotencyRecords')
+    BEGIN
+      CREATE TABLE IdempotencyRecords (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        IdempotencyKey NVARCHAR(255) NOT NULL UNIQUE,
+        Response NVARCHAR(MAX) NOT NULL,
+        CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+      );
+      PRINT 'Table IdempotencyRecords created';
+    END;
+    
+    PRINT 'Database schema ready';
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: payment-api-create-tables
+  namespace: default
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: create-tables
+        image: mcr.microsoft.com/mssql-tools
+        command:
+        - /bin/bash
+        - -c
+        - |
+          echo "Creating database tables..."
+          
+          until /opt/mssql-tools/bin/sqlcmd -S mssql-service -U sa -P "$SA_PASSWORD" -Q "SELECT 1" > /dev/null 2>&1; do
+            echo "Waiting for SQL Server..."
+            sleep 5
+          done
+          
+          /opt/mssql-tools/bin/sqlcmd -S mssql-service -U sa -P "$SA_PASSWORD" -d PaymentDB -i /scripts/create-tables.sql
+          
+          echo "Database tables created successfully"
+        env:
+        - name: SA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mssql-secret
+              key: SA_PASSWORD
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+      volumes:
+      - name: scripts
+        configMap:
+          name: create-tables-script

@@ -18,18 +18,15 @@ public class PaymentService
     // Simulate payment processing
     await Task.Delay(100); // Simulate API call
 
-    var chargeId = $"ch_{Guid.NewGuid().ToString("N")[..24]}";
     var createdAt = DateTime.UtcNow;
 
     // Determine initial status based on capture setting
-    // If capture is true or not specified, status is "succeeded" and ready to be captured
-    // If capture is false, status is "pending" and needs manual capture
     var status = request.Capture.HasValue && !request.Capture.Value ? "pending" : "succeeded";
 
     // Save charge to database
     var charge = new Charge
     {
-      Id = chargeId,
+      Id = Guid.NewGuid(),
       Status = status,
       Amount = request.Amount,
       Currency = request.Currency,
@@ -47,7 +44,7 @@ public class PaymentService
 
     return new ChargeResponse
     {
-      Id = chargeId,
+      Id = charge.Id,
       Status = status,
       Amount = request.Amount,
       Currency = request.Currency,
@@ -58,7 +55,7 @@ public class PaymentService
     };
   }
 
-  public async Task<ChargeResponse?> GetChargeByIdAsync(string paymentId)
+  public async Task<ChargeResponse?> GetChargeByIdAsync(Guid paymentId)
   {
     var charge = await _dbContext.Charges
         .FirstOrDefaultAsync(c => c.Id == paymentId);
@@ -81,7 +78,7 @@ public class PaymentService
     };
   }
 
-  public async Task<ChargeOperationResult> CaptureChargeAsync(string paymentId)
+  public async Task<ChargeOperationResult> CaptureChargeAsync(Guid paymentId)
   {
     var charge = await _dbContext.Charges
         .FirstOrDefaultAsync(c => c.Id == paymentId);
@@ -129,7 +126,7 @@ public class PaymentService
     return ChargeOperationResult.SuccessResult(response);
   }
 
-  public async Task<ChargeOperationResult> CancelChargeAsync(string paymentId)
+  public async Task<ChargeOperationResult> CancelChargeAsync(Guid paymentId)
   {
     var charge = await _dbContext.Charges
         .FirstOrDefaultAsync(c => c.Id == paymentId);

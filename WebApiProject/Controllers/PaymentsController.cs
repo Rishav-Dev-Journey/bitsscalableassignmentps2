@@ -69,14 +69,8 @@ public class PaymentsController : ControllerBase
   [ProducesResponseType(typeof(ChargeResponse), StatusCodes.Status200OK)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status400BadRequest)]
-  public async Task<IActionResult> GetPayment(string payment_id)
+  public async Task<IActionResult> GetPayment(Guid payment_id)
   {
-    // Validate payment_id
-    if (string.IsNullOrWhiteSpace(payment_id))
-    {
-      return BadRequest(new { error = "Payment ID is required" });
-    }
-
     var charge = await _paymentService.GetChargeByIdAsync(payment_id);
 
     if (charge == null)
@@ -96,14 +90,8 @@ public class PaymentsController : ControllerBase
   [ProducesResponseType(typeof(ChargeResponse), StatusCodes.Status200OK)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status400BadRequest)]
-  public async Task<IActionResult> CapturePayment(string payment_id)
+  public async Task<IActionResult> CapturePayment(Guid payment_id)
   {
-    // Validate payment_id
-    if (string.IsNullOrWhiteSpace(payment_id))
-    {
-      return BadRequest(new { error = "Payment ID is required" });
-    }
-
     var result = await _paymentService.CaptureChargeAsync(payment_id);
 
     if (!result.Success)
@@ -127,14 +115,8 @@ public class PaymentsController : ControllerBase
   [ProducesResponseType(typeof(ChargeResponse), StatusCodes.Status200OK)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status400BadRequest)]
-  public async Task<IActionResult> CancelPayment(string payment_id)
+  public async Task<IActionResult> CancelPayment(Guid payment_id)
   {
-    // Validate payment_id
-    if (string.IsNullOrWhiteSpace(payment_id))
-    {
-      return BadRequest(new { error = "Payment ID is required" });
-    }
-
     var result = await _paymentService.CancelChargeAsync(payment_id);
 
     if (!result.Success)

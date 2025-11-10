@@ -2,7 +2,7 @@ namespace WebApiProject.Models;
 
 public class ChargeRequest
 {
-  public decimal Amount { get; set; }
+  public long Amount { get; set; } // Amount in cents (e.g., 1000 = $10.00)
   public string Currency { get; set; } = "USD";
   public string? Description { get; set; }
   public string? CustomerId { get; set; }

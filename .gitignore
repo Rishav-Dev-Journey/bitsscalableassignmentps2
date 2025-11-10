@@ -93,3 +93,21 @@ ScaffoldingReadMe.txt
 *.db
 *.db-shm
 *.db-wal
+
+# Kubernetes secrets (never commit actual secrets!)
+k8s/*-secret.yaml
+k8s/secret.yaml
+
+# Azure/Deployment temporary files
+*.pfx
+*.pem
+.azure/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Deployment logs
+deployment.log
+*.kubeconfig
