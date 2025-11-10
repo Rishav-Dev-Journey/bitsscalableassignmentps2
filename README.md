@@ -45,6 +45,7 @@ SQL Server 2022 (In-cluster, 8GB persistent storage)
 The API is live and ready to use at `http://4.213.208.156`
 
 ### Health Check
+
 ```bash
 curl http://4.213.208.156/
 # Response: {"status":"healthy","service":"Payment API","version":"1.0"}
@@ -53,18 +54,21 @@ curl http://4.213.208.156/
 ### Local Development
 
 **Prerequisites:**
+
 - .NET 8 SDK
 - Docker (for SQL Server)
 
 **Setup & Run:**
 
 1. **Start SQL Server:**
+
    ```bash
    docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=YourStrong@Passw0rd123" \
       -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2022-latest
    ```
 
 2. **Apply Database Migrations:**
+
    ```bash
    cd WebApiProject
    dotnet ef database update
@@ -110,6 +114,7 @@ curl -X POST http://4.213.208.156/v1/payments/charge \
 **Note:** Amount is in **cents** (2500 = $25.00)
 
 **Response:**
+
 ```json
 {
   "id": "dacf155d-9461-4724-8005-bf31eb765d9d",
@@ -126,17 +131,20 @@ curl -X POST http://4.213.208.156/v1/payments/charge \
 ```
 
 ### Example: Get Payment
+
 ```bash
 curl http://4.213.208.156/v1/payments/dacf155d-9461-4724-8005-bf31eb765d9d
 ```
 
 ### Example: Capture Payment
+
 ```bash
 curl -X PATCH http://4.213.208.156/v1/payments/{payment-id}/capture \
   -H "Content-Type: application/json"
 ```
 
 ### Example: Cancel Payment
+
 ```bash
 curl -X PATCH http://4.213.208.156/v1/payments/{payment-id}/cancel \
   -H "Content-Type: application/json"
@@ -145,6 +153,7 @@ curl -X PATCH http://4.213.208.156/v1/payments/{payment-id}/cancel \
 ## 🏛️ System Architecture
 
 ### Application Layer
+
 ```
 Controllers/         # HTTP request handling (PaymentsController.cs)
     ↓
@@ -156,6 +165,7 @@ Models/             # Entities (Charge, IdempotencyRecord) + DTOs
 ```
 
 ### Tech Stack
+
 - .NET 8.0.121 | ASP.NET Core Web API
 - Entity Framework Core 9.0.10
 - SQL Server 2022
@@ -166,6 +176,7 @@ Models/             # Entities (Charge, IdempotencyRecord) + DTOs
 ## 🗄️ Database
 
 ### Charges Table
+
 ```sql
 CREATE TABLE Charges (
   Id UNIQUEIDENTIFIER PRIMARY KEY,
@@ -181,6 +192,7 @@ CREATE TABLE Charges (
 ```
 
 ### IdempotencyRecords Table
+
 ```sql
 CREATE TABLE IdempotencyRecords (
   Id INT IDENTITY(1,1) PRIMARY KEY,
@@ -191,11 +203,13 @@ CREATE TABLE IdempotencyRecords (
 ```
 
 **Connection String (Production):**
+
 ```
 Server=mssql-service,1433;Database=PaymentDB;User Id=sa;Password=<from-secret>;TrustServerCertificate=True;
 ```
 
 **Connection String (Local):**
+
 ```
 Server=localhost,1433;Database=PaymentDB;User Id=sa;Password=YourStrong@Passw0rd123;TrustServerCertificate=True;
 ```
@@ -216,6 +230,7 @@ canceled
 ## 🚢 Kubernetes Deployment
 
 ### Prerequisites
+
 - Azure CLI installed
 - kubectl installed
 - Docker installed
@@ -224,11 +239,13 @@ canceled
 ### Deploy to AKS
 
 1. **Get AKS credentials:**
+
 ```bash
 az aks get-credentials --resource-group Dev-Demo-App-Rg --name payment-aks-cluster
 ```
 
 2. **Deploy all resources:**
+
 ```bash
 # Deploy SQL Server
 kubectl apply -f k8s/sqlserver-secret.yaml
@@ -247,6 +264,7 @@ kubectl apply -f k8s/hpa.yaml
 ```
 
 3. **Or use the deployment script:**
+
 ```bash
 chmod +x deploy-to-aks.sh
 ./deploy-to-aks.sh
@@ -269,12 +287,14 @@ docker buildx build --platform linux/amd64 \
 ## 📊 Monitoring & Operations
 
 ### Check Pod Status
+
 ```bash
 kubectl get pods -l app=payment-api
 kubectl get pods -l app=mssql
 ```
 
 ### View Logs
+
 ```bash
 # API logs
 kubectl logs -l app=payment-api -f
@@ -284,12 +304,14 @@ kubectl logs -l app=mssql -f
 ```
 
 ### Check Services
+
 ```bash
 kubectl get svc
 kubectl get hpa
 ```
 
 ### Restart Deployment
+
 ```bash
 kubectl rollout restart deployment/payment-api
 kubectl rollout restart deployment/mssql-deployment
@@ -336,17 +358,20 @@ scalableassignmentps2/
 ## 🐛 Troubleshooting
 
 ### Pods not ready
+
 ```bash
 kubectl describe pod -l app=payment-api
 kubectl logs -l app=payment-api --tail=50
 ```
 
 ### Database connection issues
+
 ```bash
 kubectl exec -it <mssql-pod> -- /bin/bash
 ```
 
 ### View all resources
+
 ```bash
 kubectl get all
 kubectl get pvc

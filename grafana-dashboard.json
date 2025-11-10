@@ -1,0 +1,309 @@
+{
+  "dashboard": {
+    "title": "Payment API - Observability Dashboard",
+    "tags": ["payment-api", "red-metrics", "business-metrics"],
+    "timezone": "utc",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate (RPS)",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{path=\"/v1/payments/charge\"}[5m])",
+            "legendFormat": "{{method}} {{path}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Requests/sec",
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Error Rate (%)",
+        "type": "graph",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(http_errors_total[5m]) / rate(http_requests_total[5m]) * 100",
+            "legendFormat": "{{status_code}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Error Rate (%)",
+            "format": "percent"
+          }
+        ],
+        "alert": {
+          "name": "High Error Rate",
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [2],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ]
+        }
+      },
+      {
+        "id": 3,
+        "title": "Request Latency (p50, p90, p99)",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_ms_bucket[5m]))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.90, rate(http_request_duration_ms_bucket[5m]))",
+            "legendFormat": "p90",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_ms_bucket[5m]))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Latency (ms)",
+            "format": "ms"
+          }
+        ],
+        "alert": {
+          "name": "High P99 Latency",
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [1000],
+                "type": "gt"
+              },
+              "query": {
+                "params": ["C", "5m", "now"]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": 4,
+        "title": "Business Metrics - Payments",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 16, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "increase(payments_created_total[1h])",
+            "legendFormat": "Created",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "center"
+        }
+      },
+      {
+        "id": 5,
+        "title": "Payments Captured",
+        "type": "stat",
+        "gridPos": { "x": 6, "y": 16, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "increase(payments_captured_total[1h])",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 6,
+        "title": "Payments Canceled",
+        "type": "stat",
+        "gridPos": { "x": 12, "y": 16, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "increase(payments_canceled_total[1h])",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 7,
+        "title": "Payments Failed",
+        "type": "stat",
+        "gridPos": { "x": 18, "y": 16, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "increase(payments_failed_total[1h])",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 10, "color": "yellow" },
+              { "value": 50, "color": "red" }
+            ]
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Payment Amount Distribution",
+        "type": "heatmap",
+        "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(payment_amount_cents_bucket[5m])",
+            "format": "heatmap",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorScheme": "interpolateBlues"
+        }
+      },
+      {
+        "id": 9,
+        "title": "Idempotency Hit Rate",
+        "type": "graph",
+        "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(idempotency_check_latency_ms_count{is_idempotent=\"true\"}[5m]) / rate(idempotency_check_latency_ms_count[5m]) * 100",
+            "legendFormat": "Idempotent Requests %",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Percentage",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Database Query Performance (p95)",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 28, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(database_query_duration_ms_bucket{query_type=\"insert_charge\"}[5m]))",
+            "legendFormat": "INSERT charge",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(database_query_duration_ms_bucket{query_type=\"select_charge_by_id\"}[5m]))",
+            "legendFormat": "SELECT by ID",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(database_query_duration_ms_bucket{query_type=\"update_charge_capture\"}[5m]))",
+            "legendFormat": "UPDATE capture",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(database_query_duration_ms_bucket{query_type=\"update_charge_cancel\"}[5m]))",
+            "legendFormat": "UPDATE cancel",
+            "refId": "D"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Latency (ms)",
+            "format": "ms"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Average Payment Amount (USD)",
+        "type": "gauge",
+        "gridPos": { "x": 0, "y": 36, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "rate(payment_amount_cents_sum{currency=\"USD\"}[5m]) / rate(payment_amount_cents_count{currency=\"USD\"}[5m]) / 100",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 50, "color": "yellow" },
+              { "value": 100, "color": "red" }
+            ]
+          },
+          "unit": "currencyUSD"
+        }
+      },
+      {
+        "id": 12,
+        "title": "Service Availability (%)",
+        "type": "stat",
+        "gridPos": { "x": 12, "y": 36, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "(1 - (rate(http_errors_total{status_code=~\"5..\"}[5m]) / rate(http_requests_total[5m]))) * 100",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "textMode": "value_and_name",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 99, "color": "yellow" },
+              { "value": 99.9, "color": "green" }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
